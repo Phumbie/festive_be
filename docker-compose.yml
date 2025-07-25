@@ -1,0 +1,106 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: festive
+      POSTGRES_PASSWORD: festivepass
+      POSTGRES_DB: festive_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - '3000:3000'
+    depends_on:
+      - auth
+      - event
+      - vendor
+      - invoice
+      - email
+    environment:
+      - NODE_ENV=development
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - EVENT_SERVICE_URL=${EVENT_SERVICE_URL}
+      - VENDOR_SERVICE_URL=${VENDOR_SERVICE_URL}
+      - INVOICE_SERVICE_URL=${INVOICE_SERVICE_URL}
+      - PORT=${API_GATEWAY_PORT}
+      - DATABASE_URL=postgres://festive:festivepass@postgres:5432/festive_db
+
+  auth:
+    build: ./services/auth
+    ports:
+      - '3001:3001'
+    depends_on:
+      - postgres
+      - email
+    environment:
+      - NODE_ENV=development
+      - PORT=${AUTH_PORT}
+      - DATABASE_URL=postgres://festive:festivepass@postgres:5432/festive_db
+      - JWT_SECRET=your-very-strong-secret
+      - GOOGLE_CLIENT_ID=dummy
+      - GOOGLE_CLIENT_SECRET=dummy
+      - GOOGLE_CALLBACK_URL=http://localhost:3001/auth/google/callback
+      - EMAIL_SERVICE_URL=http://email:3005
+
+  event:
+    build: ./services/event
+    ports:
+      - '3002:3002'
+    depends_on:
+      - postgres
+    environment:
+      - NODE_ENV=development
+      - PORT=${EVENT_PORT}
+      - DATABASE_URL=postgres://festive:festivepass@postgres:5432/festive_db
+      - JWT_SECRET=your-very-strong-secret
+
+  vendor:
+    build: ./services/vendor
+    ports:
+      - '3003:3003'
+    depends_on:
+      - postgres
+    environment:
+      - NODE_ENV=development
+      - PORT=${VENDOR_PORT}
+      - DATABASE_URL=postgres://festive:festivepass@postgres:5432/festive_db
+
+  invoice:
+    build: ./services/invoice
+    ports:
+      - '3004:3004'
+    depends_on:
+      - postgres
+    environment:
+      - NODE_ENV=development
+      - PORT=${INVOICE_PORT}
+      - DATABASE_URL=postgres://festive:festivepass@postgres:5432/festive_db
+
+  email:
+    build: ./services/email
+    ports:
+      - '3005:3005'
+    env_file:
+      - ./services/email/.env
+    environment:
+      - NODE_ENV=development
+      - PORT=${EMAIL_PORT:-3005}
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5051:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data: 

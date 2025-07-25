@@ -1,0 +1,33 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vendor {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  phoneNumber String?
+  email       String?
+  address     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ownerId     String?
+  vendorEvents VendorEvent[]
+}
+
+model VendorEvent {
+  id        String   @id @default(uuid())
+  vendor    Vendor   @relation(fields: [vendorId], references: [id])
+  vendorId  String
+  eventId   String
+  price     Float?
+  amount    Float?
+  paymentStatus String?
+  createdAt DateTime @default(now())
+} 

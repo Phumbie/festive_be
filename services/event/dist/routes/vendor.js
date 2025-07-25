@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const vendorController_1 = require("../controllers/vendorController");
+const router = (0, express_1.Router)();
+router.post('/:eventId/vendors', vendorController_1.addVendorToEvent);
+router.get('/:eventId/vendors', vendorController_1.listEventVendors);
+router.put('/:eventId/vendors/:vendorId', vendorController_1.updateEventVendor);
+router.delete('/:eventId/vendors/:vendorId', vendorController_1.removeVendorFromEvent);
+exports.default = router;

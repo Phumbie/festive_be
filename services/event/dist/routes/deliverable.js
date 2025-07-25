@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const deliverableController_1 = require("../controllers/deliverableController");
+const router = (0, express_1.Router)();
+router.post('/:eventId/vendors/:vendorId/deliverables', deliverableController_1.addDeliverable);
+router.get('/:eventId/vendors/:vendorId/deliverables', deliverableController_1.listDeliverables);
+router.put('/:eventId/vendors/:vendorId/deliverables/:deliverableId', deliverableController_1.updateDeliverable);
+router.delete('/:eventId/vendors/:vendorId/deliverables/:deliverableId', deliverableController_1.deleteDeliverable);
+exports.default = router;

@@ -1,0 +1,131 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id             String      @id @default(uuid())
+  name           String
+  description    String?
+  eventType      String
+  eventDate      DateTime
+  currency       String
+  budget         Float
+  phoneNumber    String?
+  projectManager String?
+  userId         String
+  vendors        EventVendor[]
+  schedules      Schedule[]
+  attachments    Attachment[]
+  payments       Payment[]
+  deliverables   Deliverable[]
+  activityLogs   ActivityLog[]
+  sections       Section[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Section {
+  id        String        @id @default(uuid())
+  event     Event         @relation(fields: [eventId], references: [id])
+  eventId   String
+  name      String
+  items     SectionItem[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model SectionItem {
+  id          String   @id @default(uuid())
+  section     Section  @relation(fields: [sectionId], references: [id])
+  sectionId   String
+  name        String
+  status      String
+  description String?
+  phone       String?
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Vendor {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  phoneNumber String?
+  events      EventVendor[]
+  deliverables Deliverable[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model EventVendor {
+  id        String   @id @default(uuid())
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id])
+  vendorId  String
+  price     Float
+  amount    Float
+  paymentStatus String
+  createdAt DateTime @default(now())
+}
+
+model Schedule {
+  id          String   @id @default(uuid())
+  event       Event    @relation(fields: [eventId], references: [id])
+  eventId     String
+  forType     String
+  forId       String?
+  description String
+  date        DateTime
+  status      String
+  createdAt   DateTime @default(now())
+}
+
+model Attachment {
+  id          String   @id @default(uuid())
+  event       Event    @relation(fields: [eventId], references: [id])
+  eventId     String
+  name        String
+  description String?
+  url         String
+  createdAt   DateTime @default(now())
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  event       Event    @relation(fields: [eventId], references: [id])
+  eventId     String
+  amount      Float
+  paidAt      DateTime
+  createdAt   DateTime @default(now())
+}
+
+model Deliverable {
+  id          String   @id @default(uuid())
+  event       Event    @relation(fields: [eventId], references: [id])
+  eventId     String
+  vendor      Vendor   @relation(fields: [vendorId], references: [id])
+  vendorId    String
+  name        String
+  description String?
+  date        DateTime?
+  status      String
+  createdAt   DateTime @default(now())
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  event       Event    @relation(fields: [eventId], references: [id])
+  eventId     String
+  action      String
+  details     String?
+  status      String?
+  createdAt   DateTime @default(now())
+} 
