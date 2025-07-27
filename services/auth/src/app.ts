@@ -9,20 +9,26 @@ import './passport/google';
 
 const app = express();
 
+
+
 app.use(json());
 app.use(urlencoded({ extended: true }));
 app.use(session({ secret: process.env.JWT_SECRET || 'supersecret', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use('/api/auth', authRouter);
-app.use('/api/auth', roleRouter);
-app.use('/api/auth', userManagementRouter);
+app.use('/', authRouter);
+app.use('/', roleRouter);
+app.use('/', userManagementRouter);
 
-app.get('/api/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-app.get('/api/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/api/auth/login' }),
+app.get('/auth/login', (_req, res) => {
+  res.json({ status: 'ok', service: 'login' });
+});
+
+app.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/auth/login' }),
   (req, res) => {
     // On success, issue JWT and redirect or respond
     // @ts-ignore
@@ -31,6 +37,11 @@ app.get('/api/auth/google/callback',
     res.json({ message: 'Google SSO successful', user });
   }
 );
+
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${req.url} ${req.path}`);
+  next();
+});
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'auth' });

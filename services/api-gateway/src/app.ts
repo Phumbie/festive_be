@@ -20,10 +20,9 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
 app.use('/api/auth', createProxyMiddleware({
   target: AUTH_SERVICE_URL,
   changeOrigin: true,
-  pathRewrite: {
-    '^/api/auth/': '/auth/',
-    '^/api/auth': '/auth',
-  },
+  // pathRewrite: {
+  //   '^/api/auth': '/auth',
+  // },
 }));
 
 // Body parsers for other routes

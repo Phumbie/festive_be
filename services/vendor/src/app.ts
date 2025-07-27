@@ -8,6 +8,8 @@ console.log('CONTAINER BUILD TEST - VENDOR SERVICE');
 
 const app = express();
 
+
+
 app.use(json());
 app.use(urlencoded({ extended: true }));
 

@@ -14,8 +14,11 @@ export async function register(req: Request, res: Response) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   try {
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return res.status(409).json({ error: 'Email already registered' });
+    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingEmail) return res.status(409).json({ error: 'Email already registered' });
+
+    const existingNumber = await prisma.user.findFirst({ where: { phoneNumber } });
+    if (existingNumber) return res.status(409).json({ error: 'Phone number already registered' });
     
     const hashed = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
@@ -30,21 +33,16 @@ export async function register(req: Request, res: Response) {
       },
     });
 
-    // Check if this is the first user (account creator)
-    const totalUsers = await prisma.user.count();
-    const isFirstUser = totalUsers === 1;
-
-    if (isFirstUser) {
-      // Create default roles and assign admin role to the first user
-      try {
-        await createDefaultRoles();
-        await assignAdminRoleToUser(user.id);
-        console.log(`🎉 First user registered and assigned Admin role: ${email}`);
-      } catch (roleError) {
-        console.error('⚠️ Failed to create default roles or assign admin role:', roleError);
-        // Continue with registration even if role assignment fails
-      }
+    // Check if default roles exist, create them only once
+    const adminRole = await prisma.role.findUnique({ where: { name: 'Admin' } });
+    if (!adminRole) {
+      // Only create roles if they don't exist yet
+      await createDefaultRoles();
     }
+
+    // Assign Admin role to every new user
+    await assignAdminRoleToUser(user.id);
+    console.log(`🎉 User registered and assigned Admin role: ${email}`);
 
     // Generate verification token
     const token = uuidv4();
@@ -72,14 +70,13 @@ export async function register(req: Request, res: Response) {
       // Continue with registration even if email fails
     }
 
-    const responseMessage = isFirstUser 
-      ? 'Account created successfully! You have been assigned the Admin role as the first user. Please verify your email.'
-      : 'User registered. Please verify your email.';
+    const responseMessage = 'Account created successfully! You have been assigned the Admin role. Please verify your email.';
+    
 
     res.status(201).json({ 
       message: responseMessage,
-      isFirstUser,
-      roleAssigned: isFirstUser ? 'Admin' : null
+      isFirstUser: true,
+      roleAssigned: 'Admin'
     });
   } catch (err) {
     res.status(500).json({ error: 'Registration failed', details: err });
@@ -120,10 +117,43 @@ export async function me(req: Request, res: Response) {
   const user = (req as any).user;
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
   try {
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+    const dbUser = await prisma.user.findUnique({ 
+      where: { id: user.id },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: true
+              }
+            }
+          }
+        }
+      }
+    });
     if (!dbUser) return res.status(404).json({ error: 'User not found' });
-    res.json({ user: { id: dbUser.id, email: dbUser.email, firstName: dbUser.firstName, lastName: dbUser.lastName } });
+
+    // Extract role names
+    const userRoles = dbUser.roles.map((userRole: any) => userRole.role.name);
+
+    // Extract and merge all permissions from all roles
+    const allPermissions = dbUser.roles
+      .flatMap((userRole: any) => userRole.role.permissions.map((perm: any) => perm.name));
+
+    // Optionally deduplicate permissions
+    const uniquePermissions = Array.from(new Set(allPermissions));
+
+    res.json({ 
+      user: { 
+        id: dbUser.id, 
+        email: dbUser.email, 
+        firstName: dbUser.firstName, 
+        lastName: dbUser.lastName,
+        roles: userRoles,
+        permissions: uniquePermissions
+      } 
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch user', details: err });
   }
-} 
+}

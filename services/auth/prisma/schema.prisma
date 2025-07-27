@@ -16,7 +16,7 @@ model User {
   password       String?  // null for SSO users
   firstName      String
   lastName       String
-  phoneNumber    String?
+  phoneNumber    String? @unique
   businessName   String?
   googleId       String?  @unique
   emailVerified  Boolean  @default(false)
