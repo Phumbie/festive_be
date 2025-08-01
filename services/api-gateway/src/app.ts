@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import dashboardRouter from './routes/dashboard';
 
@@ -9,6 +10,12 @@ const INVOICE_SERVICE_URL = process.env.INVOICE_SERVICE_URL || 'http://invoice:3
 const EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL || 'http://email:3005';
 
 const app = express();
+
+// CORS configuration - MUST COME BEFORE OTHER MIDDLEWARE
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:8081'],
+  credentials: true,
+}));
 
 // Request logging middleware (should be first)
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
