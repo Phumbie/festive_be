@@ -55,7 +55,7 @@ export async function register(req: Request, res: Response) {
     });
 
     // Send verification email via email service
-    const verificationUrl = `${process.env.BASE_URL || 'http://localhost:3001'}/auth/verify?token=${token}`;
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/auth/verify-email?token=${token}`;
     
     try {
       await emailClient.sendUserRegistration({

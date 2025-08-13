@@ -17,7 +17,7 @@ export async function inviteUser(req: Request, res: Response) {
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
       },
     });
-    const acceptUrl = `${process.env.BASE_URL || 'http://localhost:3001'}/auth/accept-invite?token=${token}&roleId=${roleId}&email=${email}`;
+    const acceptUrl = `${process.env.FRONTEND_URL || 'http://localhost:8080'}/auth/accept-invite?token=${token}&roleId=${roleId}&email=${email}`;
     
     try {
       await emailClient.sendUserInvitation({

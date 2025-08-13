@@ -9,8 +9,6 @@ import './passport/google';
 
 const app = express();
 
-
-
 app.use(json());
 app.use(urlencoded({ extended: true }));
 app.use(session({ secret: process.env.JWT_SECRET || 'supersecret', resave: false, saveUninitialized: false }));

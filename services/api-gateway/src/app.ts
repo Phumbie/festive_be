@@ -13,7 +13,7 @@ const app = express();
 
 // CORS configuration - MUST COME BEFORE OTHER MIDDLEWARE
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:8081'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:8080', 'http://localhost:8081'],
   credentials: true,
 }));
 
@@ -27,9 +27,9 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
 app.use('/api/auth', createProxyMiddleware({
   target: AUTH_SERVICE_URL,
   changeOrigin: true,
-  // pathRewrite: {
-  //   '^/api/auth': '/auth',
-  // },
+  pathRewrite: {
+    '^/api/auth': '',
+  },
 }));
 
 // Body parsers for other routes
