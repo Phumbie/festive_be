@@ -14,7 +14,8 @@ const prisma = new client_1.PrismaClient();
 function toEventResponse(event) {
     return {
         ...event,
-        eventDate: event.eventDate instanceof Date ? event.eventDate.toISOString() : event.eventDate,
+        startDate: event.startDate instanceof Date ? event.startDate.toISOString() : event.startDate,
+        endDate: event.endDate instanceof Date ? event.endDate.toISOString() : event.endDate,
         createdAt: event.createdAt instanceof Date ? event.createdAt.toISOString() : event.createdAt,
         updatedAt: event.updatedAt instanceof Date ? event.updatedAt.toISOString() : event.updatedAt,
     };
@@ -35,6 +36,16 @@ function toSectionItemResponse(item) {
 }
 async function createEvent(req, res) {
     try {
+        // Validate date range only if endDate is provided
+        const startDate = new Date(req.body.startDate);
+        if (req.body.endDate) {
+            const endDate = new Date(req.body.endDate);
+            if (endDate <= startDate) {
+                return res.status(400).json({
+                    error: 'End date must be after start date'
+                });
+            }
+        }
         const event = await prisma.event.create({ data: req.body });
         res.status(201).json(toEventResponse(event));
     }

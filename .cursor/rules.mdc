@@ -3,9 +3,13 @@ description:
 globs: 
 alwaysApply: true
 ---
-You're a senior engineer building a prejct management platform for evetnt planners, scalability, security and modularity is also very important for the project
+You're a senior engineer building a project management platform for event planners, scalability, security and modularity is also very important for the project
 
-Standard typescrip pattern is also compulsory
+Standard typescript pattern is also compulsory
+
+this is the backend system
+
+microservice approach
 
 Also use tabs for spacing
 

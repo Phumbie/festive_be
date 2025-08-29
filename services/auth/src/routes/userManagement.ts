@@ -7,7 +7,8 @@ import {
   addRoleToUser,
   removeRoleFromUser,
   checkUserPermission,
-  getUserPermissions
+  getUserPermissions,
+  getStaffMembers
 } from '../controllers/userManagementController';
 
 const router = Router();
@@ -26,6 +27,9 @@ const router = Router();
 router.get('/users', getAllUsers);                    // GET /auth/users
 router.get('/users/:id', getUserById);                // GET /auth/users/:id
 router.delete('/users/:id', deleteUser);              // DELETE /auth/users/:id
+
+// Staff management
+router.get('/staff/members', getStaffMembers);        // GET /auth/staff/members
 
 // Role management
 router.put('/users/:id/role', changeUserRole);        // PUT /auth/users/:id/role

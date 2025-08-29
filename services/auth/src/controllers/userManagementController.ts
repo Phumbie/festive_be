@@ -54,6 +54,56 @@ export async function getAllUsers(_req: Request, res: Response) {
 }
 
 /**
+ * Get staff members for project manager assignment
+ */
+export async function getStaffMembers(_req: Request, res: Response) {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        emailVerified: true, // Only verified users
+        roles: {
+          some: {
+            role: {
+              name: {
+                in: ['Admin', 'Manager', 'Staff'] // Filter by relevant roles (case-sensitive)
+              }
+            }
+          }
+        }
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        roles: {
+          select: {
+            role: {
+              select: {
+                name: true,
+                description: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const staffMembers = users.map(user => ({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.roles[0]?.role.name || 'Staff Member'
+    }));
+
+    res.json({ staff: staffMembers });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch staff members', details: err });
+  }
+}
+
+/**
  * Get user by ID with roles and permissions
  */
 export async function getUserById(req: Request<{ id: string }>, res: Response) {

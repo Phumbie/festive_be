@@ -13,6 +13,7 @@ export async function register(req: Request, res: Response) {
   if (!email || !password || !firstName || !lastName) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+
   try {
     const existingEmail = await prisma.user.findUnique({ where: { email } });
     if (existingEmail) return res.status(409).json({ error: 'Email already registered' });
@@ -63,7 +64,7 @@ export async function register(req: Request, res: Response) {
         lastName: user.lastName,
         email: user.email,
         verificationUrl,
-    });
+      });
       console.log(`✅ Verification email sent to ${user.email}`);
     } catch (emailError) {
       console.error('⚠️ Failed to send verification email:', emailError);
@@ -72,13 +73,13 @@ export async function register(req: Request, res: Response) {
 
     const responseMessage = 'Account created successfully! You have been assigned the Admin role. Please verify your email.';
     
-
     res.status(201).json({ 
       message: responseMessage,
       isFirstUser: true,
       roleAssigned: 'Admin'
     });
   } catch (err) {
+    console.error('❌ Registration failed:', err);
     res.status(500).json({ error: 'Registration failed', details: err });
   }
 }
@@ -87,13 +88,49 @@ export async function login(req: Request, res: Response) {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Missing credentials' });
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ 
+      where: { email },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: true
+              }
+            }
+          }
+        }
+      }
+    });
     if (!user || !user.password) return res.status(401).json({ error: 'Invalid credentials' });
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
     if (!user.emailVerified) return res.status(403).json({ error: 'Email not verified' });
+    
     const token = signJwt({ id: user.id, email: user.email });
-    res.json({ message: 'Login successful', token });
+    
+    // Extract role names
+    const userRoles = user.roles.map((userRole: any) => userRole.role.name);
+
+    // Extract and merge all permissions from all roles
+    const allPermissions = user.roles
+      .flatMap((userRole: any) => userRole.role.permissions.map((perm: any) => perm.name));
+
+    // Optionally deduplicate permissions
+    const uniquePermissions = Array.from(new Set(allPermissions));
+
+    res.json({ 
+      message: 'Login successful', 
+      token,
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        firstName: user.firstName, 
+        lastName: user.lastName,
+        roles: userRoles,
+        permissions: uniquePermissions
+      }
+    });
   } catch (err) {
     res.status(500).json({ error: 'Login failed', details: err });
   }

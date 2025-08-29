@@ -14,8 +14,9 @@ console.log('CONTAINER BUILD TEST - EVENT SERVICE');
 
 const app = express();
 
-app.use(json());
-app.use(urlencoded({ extended: true }));
+// Increase body parser limits to handle larger requests
+app.use(json({ limit: '10mb' }));
+app.use(urlencoded({ extended: true, limit: '10mb' }));
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'event' });

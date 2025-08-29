@@ -3,7 +3,7 @@ export interface EventCreateDTO {
   description?: string;
   eventType: string;
   startDate: string; // ISO string
-  endDate: string; // ISO string
+  endDate?: string; // Optional ISO string - null for single-day events
   currency: string;
   budget: number;
   phoneNumber?: string;
@@ -19,7 +19,7 @@ export interface EventResponse {
   description?: string;
   eventType: string;
   startDate: string;
-  endDate: string;
+  endDate: string | null; // Can be null for single-day events
   currency: string;
   budget: number;
   phoneNumber?: string;

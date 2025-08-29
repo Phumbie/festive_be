@@ -199,11 +199,41 @@ export async function getRoleById(req: Request<{ id: string }>, res: Response) {
 }
 
 /**
+ * Seed all system permissions
+ * This should be called before creating roles
+ */
+export async function seedPermissions() {
+  try {
+    console.log('🌱 Seeding system permissions...');
+    
+    // Create permissions in batches to avoid overwhelming the database
+    for (const permission of SYSTEM_PERMISSIONS) {
+      await prisma.permission.upsert({
+        where: { name: permission.name },
+        update: { description: permission.description },
+        create: {
+          name: permission.name,
+          description: permission.description,
+        },
+      });
+    }
+    
+    console.log(`✅ ${SYSTEM_PERMISSIONS.length} permissions seeded successfully`);
+  } catch (err) {
+    console.error('❌ Failed to seed permissions:', err);
+    throw err;
+  }
+}
+
+/**
  * Create default roles (admin and project manager)
  * This should be called during system initialization
  */
 export async function createDefaultRoles() {
   try {
+    // First, ensure all permissions exist
+    await seedPermissions();
+    
     // Check if default roles already exist
     const existingAdmin = await prisma.role.findUnique({ where: { name: 'Admin' } });
     const existingProjectManager = await prisma.role.findUnique({ where: { name: 'Project Manager' } });

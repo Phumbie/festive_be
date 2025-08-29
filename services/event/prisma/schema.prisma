@@ -14,7 +14,7 @@ model Event {
   description    String?
   eventType      String
   startDate      DateTime
-  endDate        DateTime
+  endDate        DateTime?   // Made optional for single-day events
   currency       String
   budget         Float
   phoneNumber    String?

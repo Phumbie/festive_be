@@ -10,9 +10,9 @@ async function getEventAnalytics(req, res) {
         const event = await prisma.event.findUnique({ where: { id: eventId } });
         if (!event)
             return res.status(404).json({ error: 'Event not found' });
-        // Countdown (days until event)
+        // Countdown (days until event start)
         const now = new Date();
-        const countdown = Math.max(0, Math.ceil((event.eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        const countdown = Math.max(0, Math.ceil((event.startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
         // Payments
         const payments = await prisma.payment.findMany({ where: { eventId } });
         const amountPaid = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -50,7 +50,8 @@ async function getEventAnalytics(req, res) {
             completedSchedules,
             totalAttachments: attachmentCount,
             currency: event.currency,
-            eventDate: event.eventDate,
+            startDate: event.startDate,
+            endDate: event.endDate,
             allUpcomingSchedules: upcomingSchedules,
             allUpcomingSchedulesCount: upcomingSchedules.length,
         });
@@ -65,7 +66,7 @@ async function getGlobalAnalytics(_req, res) {
         // Total events
         const totalEvents = await prisma.event.count();
         // Upcoming events
-        const upcomingEvents = await prisma.event.findMany({ where: { eventDate: { gt: now } } });
+        const upcomingEvents = await prisma.event.findMany({ where: { startDate: { gt: now } } });
         // Total budgets
         const allEvents = await prisma.event.findMany();
         const totalBudgets = allEvents.reduce((sum, e) => sum + (e.budget || 0), 0);

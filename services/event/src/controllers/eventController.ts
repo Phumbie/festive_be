@@ -30,22 +30,75 @@ function toSectionItemResponse(item: any): SectionItemResponse {
   };
 }
 
-export async function createEvent(req: Request<{}, {}, EventCreateDTO>, res: Response<EventResponse>) {
+export async function createEvent(req: Request<{}, {}, EventCreateDTO>, res: Response<EventResponse | { error: string; details?: any }>) {
+  const startTime = Date.now();
+  
   try {
-    // Validate date range
-    const startDate = new Date(req.body.startDate);
-    const endDate = new Date(req.body.endDate);
+    console.log(`[${new Date().toISOString()}] Creating event with data:`, req.body);
     
-    if (endDate <= startDate) {
-      return res.status(400).json({ 
-        error: 'End date must be after start date' 
-      } as any);
+    // Extract userId from JWT token
+    const userId = (req as any).user?.id;
+    console.log(`[${new Date().toISOString()}] Extracted userId from token:`, userId);
+    
+    if (!userId) {
+      console.log(`[${new Date().toISOString()}] No userId found in token`);
+      return res.status(401).json({ error: 'User ID not found in token' } as any);
     }
 
-    const event = await prisma.event.create({ data: req.body });
+    // Validate date range only if endDate is provided
+    const startDate = new Date(req.body.startDate);
+    console.log(`[${new Date().toISOString()}] Parsed startDate:`, startDate);
+    
+    if (req.body.endDate) {
+      const endDate = new Date(req.body.endDate);
+      console.log(`[${new Date().toISOString()}] Parsed endDate:`, endDate);
+      
+      if (endDate <= startDate) {
+        console.log(`[${new Date().toISOString()}] Invalid date range: endDate <= startDate`);
+        return res.status(400).json({ 
+          error: 'End date must be after start date' 
+        } as any);
+      }
+    }
+
+    // Prepare event data with proper types
+    const eventData = {
+      name: req.body.name,
+      description: req.body.description,
+      eventType: req.body.eventType,
+      startDate: startDate,
+      endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      currency: req.body.currency,
+      budget: req.body.budget,
+      phoneNumber: req.body.phoneNumber,
+      projectManager: req.body.projectManager,
+      userId: userId
+    };
+    
+    console.log(`[${new Date().toISOString()}] Prepared event data:`, eventData);
+    console.log(`[${new Date().toISOString()}] Attempting to create event in database...`);
+
+    // Add timeout protection for database operation
+    const event = await Promise.race([
+      prisma.event.create({ data: eventData as any }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database operation timeout')), 25000)
+      )
+    ]);
+    
+    const endTime = Date.now();
+    console.log(`[${new Date().toISOString()}] Event created successfully in ${endTime - startTime}ms:`, event);
+    
     res.status(201).json(toEventResponse(event));
   } catch (err) {
-    res.status(500).json({ error: 'Failed to create event', details: err } as any);
+    const endTime = Date.now();
+    console.error(`[${new Date().toISOString()}] Error creating event after ${endTime - startTime}ms:`, err);
+    
+    if (err instanceof Error && err.message === 'Database operation timeout') {
+      res.status(408).json({ error: 'Request timeout', details: 'Database operation took too long' });
+    } else {
+      res.status(500).json({ error: 'Failed to create event', details: err } as any);
+    }
   }
 }
 
